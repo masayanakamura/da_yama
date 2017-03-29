@@ -1,0 +1,397 @@
+
+
+//da-yama.java
+//中村まさや 山田こうへい
+import java.util.Random;
+
+public class da_yama{
+	public static void main(String[] args){
+		int[] value,houko,tozi,valueUp,valueDown,valueLeft,valueRight;
+		valueUp = new int[10];
+		valueDown = new int[10];
+		valueLeft = new int[10];
+		valueRight = new int[10];
+		houko = new int[10];
+		value = new int[10];
+		tozi = new int[10];
+		int mode=1,old_s=0;
+		int old_mode = 1;
+		int turn=0;		//ターン数
+		int item=0;		//アイテム
+		int i=2,ii=0;
+		String bend="l";
+		int searchitem=0,searchblock=0,searchnot=0;
+		int itemflg=0;
+/*******************サーバに接続********************/
+		edu.procon.Connect2010 target;
+		target = new edu.procon.Connect2010("samp4",args[0],Integer.parseInt(args[1]));
+
+		if(Integer.parseInt(args[1])==2009){
+			mode=2;
+			System.out.print("クールで競技サーバに接続しました。");
+		}else{
+			mode=3;
+			System.out.print("ホットで競技サーバに接続しました。");
+		}
+
+		
+	/****************メインループ**************/
+		while(true){
+			value = target.getReady();
+			if(value[0]==0)break;
+			turn++;//ターン数＋１
+			searchblock=0;
+			searchitem=0;
+			searchnot=0;
+			//ステータス表示
+			System.out.print("\nturn="+ turn + ", mode=" + mode +", item"+item);
+			
+			for(int h=1;h<value.length;h++){
+				if(value[h]==2)searchblock++;
+				if(value[h]==3)searchitem++;
+				if(value[h]==0)searchnot++;
+			}
+			if(searchnot>=8&&ii<4)mode=123;
+	//4方向に敵がいるかチェック
+			if(value[2]==1||value[4]==1||value[6]==1||value[8]==1){
+				mode=90;			//モードを９０にする
+			}
+	//斜めに敵がいるかチェック
+			else if(value[1]==1||value[3]==1||value[5]==1||value[7]==1||value[9]==1){
+				old_mode=mode;	
+				mode=10;				
+			}
+	//アイテム
+			else if(value[2]==3||value[4]==3||value[6]==3||value[8]==3){
+				//if(itemflg==1||tozi[2]!=2){
+				old_mode=mode;			//現在のモードをold_modeに保存する。
+				mode=20;			//モードを２０にする
+				//}
+			}
+			else if(value[1]==3||value[3]==3||value[7]==3||value[9]==3){
+				old_mode=mode;		
+				mode=200;
+			}
+	
+			for(int g=1;g<=9;g++){
+				if(houko[g]==3){
+					if(mode==1&&old_s==1)mode=4;
+					else if(mode==1&&old_s==0)mode=2;
+					else if(mode==2&&old_s==1)mode=1;
+					else if(mode==2&&old_s==0)mode=3;
+					else if(mode==3&&old_s==0)mode=4;
+					else if(mode==3&&old_s==1)mode=2;
+					else if(mode==4&&old_s==1)mode=3;
+					else if(mode==4&&old_s==0)mode=1;
+					break;
+				}
+			}
+			
+			/************modeの値(分岐)*************/
+			switch(mode){
+				case 1:				//ブロックにぶつかるまで下に移動する
+					if(i==3){
+						if(old_s==0){
+							houko=target.lookLeft();
+							old_s=1;
+						}
+						else{
+							houko=target.lookRight();
+							old_s=0;
+						}
+						i=0;
+						break;
+						}
+					if(value[8]!=2){		//下が壁でない
+						value=target.walkDown();//下に移動する
+					}else{
+						if(/*bend=="l"&&*/value[4]!=2){
+							value=target.walkLeft();
+							bend="r";
+							mode=4;
+						}
+						else if(/*bend=="r"&&*/value[6]!=2){
+							value=target.walkRight();
+							bend="l";
+							mode=2;
+						}
+						else if(/*bend=="l"&&*/value[4]==2&&value[6]!=2){
+							value=target.walkRight();
+							mode=2;
+						}
+						else if(/*bend=="r"&&*/value[6]==2&&value[4]!=2){
+							value=target.walkLeft();
+							mode=4;
+						}
+						else{
+							if(bend=="r")bend="l";
+							else bend="r";
+							value=target.walkUp();
+							mode=3;
+						}
+					}i++;
+					break;
+				case 2:				//ブロックにぶつかるまで右に移動する
+					if(i==3){
+						if(old_s==0){
+							houko=target.lookDown();
+							old_s=1;
+						}
+						else{
+							houko=target.lookUp();
+							old_s=0;
+						}
+						
+						i=0;
+						break;
+						}
+					if(value[6]!=2){		//右が壁でなければ
+						value=target.walkRight();//右に移動する
+					}else{
+						if(/*bend=="l"&&*/value[8]!=2){
+							value=target.walkDown();
+							bend="r";
+							mode=1;
+						}
+						else if(/*bend=="r"&&*/value[2]!=2){
+							value=target.walkUp();
+							bend="l";
+							mode=3;
+						}
+						else if(/*bend=="l"&&*/value[8]==2&&value[2]!=2){
+							value=target.walkUp();
+							mode=3;
+						}
+						else if(/*bend=="r"&&*/value[2]==2&&value[8]!=2){
+							value=target.walkDown();
+							mode=1;
+						}
+						else{
+							if(bend=="r")bend="l";
+							else bend="r";
+							value=target.walkLeft();
+							mode=4;
+						}
+						
+					}i++;
+					break;
+				case 3:				//ブロックにぶつかるまで上に移動する
+					if(i==3){
+						if(old_s==0){
+							houko=target.lookRight();
+							old_s=1;
+						}
+						else{
+							houko=target.lookLeft();
+							old_s=0;
+						}
+						
+						i=0;
+						break;
+						}
+					if(value[2]!=2){		//上が壁でなければ
+						value=target.walkUp();//上に移動する
+					}else{
+						if(/*bend=="l"&&*/value[6]!=2){
+							value=target.walkRight();
+							bend="r";
+							mode=2;
+						}
+						else if(/*bend=="r"&&*/value[4]!=2){
+							value=target.walkLeft();
+							bend="l";
+							mode=4;
+						}
+						else if(/*bend=="l"&&*/value[6]==2&&value[4]!=2){
+							value=target.walkLeft();
+							mode=4;
+						}
+						else if(/*bend=="r"&&*/value[4]==2&&value[6]!=2){
+							value=target.walkRight();
+							mode=2;
+						}
+						else{
+							if(bend=="r")bend="l";
+							else bend="r";
+							value=target.walkDown();
+							mode=1;
+						}
+						
+					}i++;
+					break;
+				case 4:				//ブロックにぶつかるまで左に移動する
+					if(i==3){
+						if(old_s==0){
+							houko=target.lookUp();
+							old_s=1;
+						}
+						else{
+							houko=target.lookDown();
+							old_s=0;
+						}
+						
+						i=0;
+						break;
+						}
+					if(value[4]!=2){		//左が壁でなければ
+						value=target.walkLeft();//左に移動する
+					}else{
+						if(/*bend=="l"&&*/value[2]!=2){
+							value=target.walkUp();
+							bend="r";
+							mode=3;
+						}
+						else if(/*bend=="r"&&*/value[8]!=2){
+							value=target.walkDown();
+							bend="l";
+							mode=1;
+						}
+						else if(/*bend=="l"&&*/value[2]==2&&value[8]!=2){
+							value=target.walkDown();
+							mode=1;
+						}
+						else if(/*bend=="r"&&*/value[8]==2&&value[2]!=2){
+							value=target.walkUp();
+							mode=3;
+						}
+						else{
+							if(bend=="r")bend="l";
+							else bend="r";
+							value=target.walkRight();
+							mode=2;
+						}	
+					}i++;
+					break;
+				case 10://戦闘１
+						if(value[1]==1&&value[2]==0)value=target.putUp();
+						else if(value[1]==1&&value[4]==0)value=target.putLeft();
+						else if(value[3]==1&&value[2]==0)value=target.putUp();
+						else if(value[3]==1&&value[6]==0)value=target.putRight();
+						else if(value[7]==1&&value[4]==0)value=target.putLeft();
+						else if(value[7]==1&&value[8]==0)value=target.putDown();
+						else if(value[9]==1&&value[6]==0)value=target.putRight();
+						else if(value[9]==1&&value[8]==0)value=target.putDown();
+						else if(value[5]==1)value=target.lookUp();
+						else value=target.lookUp();
+						mode = old_mode;
+					break;
+				case 20:
+					if(value[2]==3){
+						if(value[1]==2&&value[3]==2&&itemflg==0){
+							value=target.lookUp();
+							itemflg=1;
+							break;
+						}
+						else{
+							value=target.walkUp();
+							itemflg=0;
+						}
+					}
+					else if(value[4]==3){
+						if(value[1]==2&&value[7]==2&&itemflg==0){
+							value=target.lookLeft();
+							itemflg=1;
+							break;
+						}
+						else{
+							value = target.walkLeft();
+							itemflg=0;
+						}
+					}
+					else if(value[6]==3){
+						if(value[9]==2&&value[3]==2&&itemflg==0){
+							value=target.lookRight();
+							itemflg=1;
+							break;
+						}
+						else{
+							value = target.walkRight();
+							itemflg=0;
+						}
+					}
+					else if(value[8]==3){
+						if(value[7]==2&&value[9]==2&&itemflg==0){
+							value=target.lookDown();
+							itemflg=1;
+							break;
+						}
+						else{
+							value=target.walkDown();
+							itemflg=0;
+						}
+					}
+					mode = old_mode;
+					item++;
+					break;
+				case 90:
+					if(value[2]==1)value=target.putUp();
+					else if(value[4]==1)value=target.putLeft();
+					else if(value[6]==1)value=target.putRight();
+					else value=target.putDown();
+					break;
+				case 100:
+					if(value[1]==1||value[2]==1||value[3]==1||value[4]==1||value[5]==1||value[6]==1||value[7]==1||value[8]==1||value[9]==1){
+						if(mode==1)value=target.putDown();
+						else if(mode==2)value=target.putRight();
+						else if(mode==3)value=target.putUp();
+						else if(mode==4)value=target.putLeft();
+					}
+					break;
+				case 123:
+					if(ii==0){
+						valueUp=target.searchUp();
+						if(valueUp[1]==3||valueUp[2]==3||valueUp[3]==3||valueUp[4]==3||valueUp[5]==3||valueUp[6]==3||valueUp[7]==3||valueUp[8]==3||valueUp[9]==3){
+							mode=3;
+							ii=10;
+						}
+					}
+					if(ii==1){
+						valueDown=target.searchDown();
+						if(valueDown[1]==3||valueDown[2]==3||valueDown[3]==3||valueDown[4]==3||valueDown[5]==3||valueDown[6]==3||valueDown[7]==3||valueDown[8]==3||valueDown[9]==3){
+							mode=1;
+							ii=10;
+						}
+					}
+					if(ii==2){
+						valueLeft=target.searchLeft();
+						if(valueLeft[1]==3||valueLeft[2]==3||valueLeft[3]==3||valueLeft[4]==3||valueLeft[5]==3||valueLeft[6]==3||valueLeft[7]==3||valueLeft[8]==3||valueLeft[9]==3){
+							mode=4;
+							ii=10;
+						}
+					}
+					if(ii==3){
+						valueRight=target.searchRight();
+						if(valueRight[1]==3||valueRight[2]==3||valueRight[3]==3||valueRight[4]==3||valueRight[5]==3||valueRight[6]==3||valueRight[7]==3||valueRight[8]==3||valueRight[9]==3){
+							mode=2;
+							ii=10;
+						}
+					}
+					ii++;
+					break;
+				case 200:
+					if(value[1]==3&&value[2]!=2)value=target.walkUp();
+					else if(value[1]==3&&value[4]!=2)value=target.walkLeft();
+					else if(value[7]==3&&value[4]!=2)value=target.walkLeft();
+					else if(value[7]==3&&value[8]!=2)value=target.walkDown();
+					else if(value[9]==3&&value[8]!=2)value=target.walkDown();
+					else if(value[9]==3&&value[6]!=2)value=target.walkRight();
+					else if(value[3]==3&&value[6]!=2)value=target.walkRight();
+					else if(value[3]==3&&value[2]!=2)value=target.walkUp();
+					else {
+						if(value[2]==0)value=target.walkUp();
+						else if(value[4]==0)value=target.walkLeft();
+						else if(value[6]==0)value=target.walkRight();
+						else if(value[8]==0)value=target.walkDown();
+					}
+					mode = old_mode;
+					break;
+				}
+			if(value[0]==0)break;
+		}
+		target.exit();	
+	}
+}
+
+
+
+
